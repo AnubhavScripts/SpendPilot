@@ -124,15 +124,17 @@ body {
   border-color: rgba(99, 102, 241, 0.3);
 }
 
-/* Input styles */
-.input-base {
-  @apply w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/30 
-         transition-all duration-200 outline-none
-         focus:border-brand-500/60 focus:bg-white/10 focus:ring-2 focus:ring-brand-500/20;
-}
+@layer components {
+  /* Input styles */
+  .input-base {
+    @apply w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/30 
+           transition-all duration-200 outline-none
+           focus:border-brand-500/60 focus:bg-white/10 focus:ring-2 focus:ring-brand-500/20;
+  }
 
-.select-base {
-  @apply w-full rounded-xl border border-white/10 bg-surface-50 px-4 py-3 text-sm text-white
-         transition-all duration-200 outline-none cursor-pointer appearance-none
-         focus:border-brand-500/60 focus:ring-2 focus:ring-brand-500/20;
+  .select-base {
+    @apply w-full rounded-xl border border-white/10 bg-surface-50 px-4 py-3 text-sm text-white
+           transition-all duration-200 outline-none cursor-pointer appearance-none
+           focus:border-brand-500/60 focus:ring-2 focus:ring-brand-500/20;
+  }
 }

@@ -63,7 +63,7 @@ export default function ToolInputCard({ index, onRemove }: ToolInputCardProps) {
             ))}
           </select>
           {errors.tools?.[index]?.tool && (
-            <p className="mt-1 text-[10px] text-rose-400">{errors.tools[index]?.tool?.message}</p>
+            <p className="mt-1 text-[10px] text-rose-400">{errors.tools?.[index]?.tool?.message}</p>
           )}
         </div>
 
@@ -87,7 +87,7 @@ export default function ToolInputCard({ index, onRemove }: ToolInputCardProps) {
             ))}
           </select>
           {errors.tools?.[index]?.plan && (
-            <p className="mt-1 text-[10px] text-rose-400">{errors.tools[index]?.plan?.message}</p>
+            <p className="mt-1 text-[10px] text-rose-400">{errors.tools?.[index]?.plan?.message}</p>
           )}
         </div>
 
@@ -110,7 +110,7 @@ export default function ToolInputCard({ index, onRemove }: ToolInputCardProps) {
             />
           </div>
           {errors.tools?.[index]?.monthlySpend && (
-            <p className="mt-1 text-[10px] text-rose-400">{errors.tools[index]?.monthlySpend?.message}</p>
+            <p className="mt-1 text-[10px] text-rose-400">{errors.tools?.[index]?.monthlySpend?.message}</p>
           )}
         </div>
 
@@ -132,7 +132,7 @@ export default function ToolInputCard({ index, onRemove }: ToolInputCardProps) {
             />
           </div>
           {errors.tools?.[index]?.seats && (
-            <p className="mt-1 text-[10px] text-rose-400">{errors.tools[index]?.seats?.message}</p>
+            <p className="mt-1 text-[10px] text-rose-400">{errors.tools?.[index]?.seats?.message}</p>
           )}
         </div>
       </div>
