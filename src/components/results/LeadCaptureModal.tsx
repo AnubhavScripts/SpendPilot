@@ -88,7 +88,7 @@ export default function LeadCaptureModal({
                 className="text-center py-4"
               >
                 <CheckCircle2 className="h-12 w-12 text-emerald-400 mx-auto mb-3" />
-                <h3 className="text-lg font-bold text-white mb-1">You're all set!</h3>
+                <h3 className="text-lg font-bold text-white mb-1">You&apos;re all set!</h3>
                 <p className="text-sm text-white/50">Check your email for your audit summary.</p>
               </motion.div>
             ) : (
@@ -99,7 +99,7 @@ export default function LeadCaptureModal({
                   </div>
                   <h2 className="text-lg font-bold text-white">Get your results via email</h2>
                   <p className="mt-1 text-sm text-white/50">
-                    We'll send your full audit report and savings breakdown.
+                    We&apos;ll send your full audit report and savings breakdown.
                   </p>
                 </div>
 
