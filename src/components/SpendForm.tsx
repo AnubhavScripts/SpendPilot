@@ -5,10 +5,9 @@ import { useForm, useFieldArray, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Calculator, AlertCircle, Loader2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { generateId, cn } from '@/lib/utils';
-import { useFormPersistence } from '@/hooks/useFormPersistence';
-import { spendFormSchema, type SpendFormSchema } from '@/lib/validations';
+import { spendFormSchema, toolEntrySchema, isBlankTool, type SpendFormSchema } from '@/lib/validations';
 import { USE_CASES } from '@/constants';
 import { runAudit } from '@/lib/auditEngine';
 import { generateFallbackSummary } from '@/lib/aiSummary';
@@ -17,7 +16,7 @@ import ToolInputCard from './ToolInputCard';
 export default function SpendForm() {
   const [isClient, setIsClient] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { save, load, clear } = useFormPersistence();
+  const [toolsError, setToolsError] = useState<string | null>(null);
   const router = useRouter();
 
   const methods = useForm<SpendFormSchema>({
@@ -29,24 +28,58 @@ export default function SpendForm() {
     },
   });
 
-  const { control, handleSubmit, register, watch, reset, formState: { errors } } = methods;
+  const { control, handleSubmit, register, formState: { errors } } = methods;
   const { fields, append, remove } = useFieldArray({ control, name: 'tools' });
-  const watchedData = watch();
+
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     setIsClient(true);
-    const saved = load();
-    if (saved) reset(saved as any);
-  }, [load, reset]);
 
-  useEffect(() => {
-    if (isClient) save(watchedData as any);
-  }, [watchedData, isClient, save]);
+    // Restore form data when navigating back via "Edit Inputs"
+    if (searchParams.get('restore') === '1') {
+      const saved = sessionStorage.getItem('spendpilot_form');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          methods.reset(parsed);
+        } catch { /* ignore malformed data */ }
+        // Delete immediately so a page refresh starts fresh
+        sessionStorage.removeItem('spendpilot_form');
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onSubmit = async (data: SpendFormSchema) => {
+    // ── Step 1: Strip incomplete tool rows (no plan = skip) ───────────────
+    const filledTools = data.tools.filter((t) => !isBlankTool(t));
+
+    if (filledTools.length === 0) {
+      setToolsError('Add at least one AI tool with tool name and plan selected.');
+      return;
+    }
+
+    // ── Step 2: Validate the filled tools strictly ─────────────────────────
+    const toolValidationErrors: string[] = [];
+    filledTools.forEach((t, i) => {
+      const result = toolEntrySchema.safeParse(t);
+      if (!result.success) {
+        toolValidationErrors.push(
+          `Tool ${i + 1} (${t.tool || 'unnamed'}): ${result.error.errors.map((e) => e.message).join(', ')}`
+        );
+      }
+    });
+
+    if (toolValidationErrors.length > 0) {
+      setToolsError(toolValidationErrors[0]);
+      return;
+    }
+
+    setToolsError(null);
     setIsSubmitting(true);
 
-    // Small delay so the loader is visible and feels deliberate
+    // Small delay so the loader feels deliberate
     await new Promise((r) => setTimeout(r, 800));
 
     try {
@@ -54,32 +87,44 @@ export default function SpendForm() {
       const auditResult = runAudit({
         teamSize: data.teamSize as number,
         useCase: data.useCase as any,
-        tools: data.tools.map((t) => ({
-          id: t.id,
+        tools: filledTools.map((t) => ({
+          id: t.id ?? generateId(),
           tool: t.tool as any,
-          plan: t.plan,
+          plan: t.plan as string,
           monthlySpend: t.monthlySpend as number,
-          seats: t.seats as number,
+          seats: (!t.seats || isNaN(Number(t.seats))) ? 1 : Number(t.seats),
         })),
       });
 
-      // ── Generate AI summary (always use fallback for now; try Claude async) ─
+      // ── Generate fallback AI summary client-side ──────────────────────────
       auditResult.aiSummary = generateFallbackSummary(auditResult);
 
       // ── Store in sessionStorage → results page reads it ──────────────────
       sessionStorage.setItem('spendpilot_audit', JSON.stringify(auditResult));
 
-      // ── Attempt to persist + get a shareSlug via API (fire-and-forget) ───
-      // This works when env vars are configured; silently skipped otherwise
+      // Build a clean, serializable payload — never spread raw RHF data
+      // as it may contain internal DOM / fiber references that break JSON.stringify
+      const cleanPayload = {
+        teamSize: Number(data.teamSize),
+        useCase: data.useCase,
+        tools: filledTools.map((t) => ({
+          id: t.id ?? generateId(),
+          tool: String(t.tool ?? ''),
+          plan: String(t.plan ?? ''),
+          monthlySpend: Number(t.monthlySpend ?? 0),
+          seats: (!t.seats || isNaN(Number(t.seats))) ? 1 : Number(t.seats),
+        })),
+      };
+
       fetch('/api/audit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify(cleanPayload),
       })
         .then(async (res) => {
           if (res.ok) {
             const { audit: serverAudit, shareSlug } = await res.json();
-            // If server returned a Claude-powered summary, upgrade it
+            // If server returned a Gemini-powered summary, upgrade it silently
             if (serverAudit?.aiSummary && serverAudit.aiSummary !== auditResult.aiSummary) {
               const stored = sessionStorage.getItem('spendpilot_audit');
               if (stored) {
@@ -91,13 +136,24 @@ export default function SpendForm() {
             if (shareSlug) sessionStorage.setItem('spendpilot_slug', shareSlug);
           }
         })
-        .catch(() => { /* Silently skip — no env vars configured */ });
+        .catch(() => { /* Silently skip — env vars may not be configured */ });
 
-      clear();
+      // ── Save form data for "Edit Inputs" restore ─────────────────────────
+      sessionStorage.setItem('spendpilot_form', JSON.stringify({
+        teamSize: Number(data.teamSize),
+        useCase: data.useCase,
+        tools: filledTools.map((t) => ({
+          id: t.id ?? generateId(),
+          tool: String(t.tool ?? ''),
+          plan: String(t.plan ?? ''),
+          monthlySpend: Number(t.monthlySpend ?? 0),
+          seats: (!t.seats || isNaN(Number(t.seats))) ? 1 : Number(t.seats),
+        })),
+      }));
+
       router.push('/results');
     } catch (err) {
       console.error('[SpendForm] Audit failed:', err);
-      // Even if something unexpected fails, navigate — the engine should never throw
     } finally {
       setIsSubmitting(false);
     }
@@ -107,7 +163,9 @@ export default function SpendForm() {
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={handleSubmit(onSubmit, (validationErrors) => {
+        console.error('[SpendForm] ❌ Validation blocked submit:', JSON.stringify(validationErrors, null, 2));
+      })} className="space-y-8">
 
         {/* ── Team Details ── */}
         <section className="glass rounded-3xl p-6 sm:p-8 border border-white/10">
@@ -157,21 +215,34 @@ export default function SpendForm() {
             AI Tool Subscriptions
           </h2>
           <div className="space-y-4">
-            <AnimatePresence mode="popLayout">
+            <AnimatePresence>
               {fields.map((field, index) => (
                 <ToolInputCard key={field.id} index={index} onRemove={() => remove(index)} />
               ))}
             </AnimatePresence>
           </div>
-          {errors.tools?.root && (
-            <div className="mt-4 rounded-xl bg-rose-500/10 p-3 border border-rose-500/20 flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 text-rose-400" />
-              <p className="text-sm text-rose-400">{errors.tools.root.message}</p>
-            </div>
-          )}
+
+          {/* Tools error — shown when the submit handler rejects the tool list */}
+          <AnimatePresence>
+            {toolsError && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                className="mt-4 rounded-xl bg-rose-500/10 p-3 border border-rose-500/20 flex items-center gap-2"
+              >
+                <AlertCircle className="h-4 w-4 text-rose-400 shrink-0" />
+                <p className="text-sm text-rose-400">{toolsError}</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <motion.button
             type="button"
-            onClick={() => append({ id: generateId(), tool: '', plan: '', monthlySpend: '' as any, seats: 1 })}
+            onClick={() => {
+              setToolsError(null);
+              append({ id: generateId(), tool: '', plan: '', monthlySpend: '' as any, seats: '' as any });
+            }}
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
             className="mt-6 w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-white/20 bg-white/5 py-4 text-sm font-medium text-white/60 transition-colors hover:border-brand-500/50 hover:bg-brand-500/10 hover:text-brand-300"
@@ -189,7 +260,7 @@ export default function SpendForm() {
           className="sticky bottom-6 z-20 mx-auto mt-12 overflow-hidden rounded-2xl glass-strong border border-brand-500/30 p-4 shadow-glass glow-purple flex flex-col sm:flex-row items-center justify-between gap-4"
         >
           <div className="text-sm text-white/60 ml-2">
-            Form auto-saves. <span className="text-white">Ready to see your savings?</span>
+            Secure &amp; private. <span className="text-white">Ready to see your savings?</span>
           </div>
           <button
             type="submit"

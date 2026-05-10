@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const toolEntrySchema = z.object({
-  id: z.string(),
+  id: z.string().optional(),
   tool: z.string().min(1, 'Please select a tool'),
   plan: z.string().min(1, 'Please select a plan'),
   monthlySpend: z
@@ -15,6 +15,9 @@ export const toolEntrySchema = z.object({
     .max(10000, 'Too many seats'),
 });
 
+// The form schema accepts any array of partial tool entries.
+// Blank-row filtering and strict validation happen in the onSubmit handler.
+// This prevents react-hook-form from rejecting the submit when empty rows exist.
 export const spendFormSchema = z.object({
   teamSize: z
     .number({ invalid_type_error: 'Enter your team size' })
@@ -24,7 +27,34 @@ export const spendFormSchema = z.object({
   useCase: z.enum(['coding', 'writing', 'research', 'data-analysis', 'mixed'], {
     errorMap: () => ({ message: 'Please select a use case' }),
   }),
-  tools: z.array(toolEntrySchema).min(1, 'Add at least one AI tool'),
+  tools: z.array(
+    z.object({
+      id: z.string().optional(),
+      tool: z.string().optional().default(''),
+      plan: z.string().optional().default(''),
+      monthlySpend: z.any().optional(),
+      seats: z.any().optional(),
+    })
+  ),
 });
 
 export type SpendFormSchema = z.infer<typeof spendFormSchema>;
+
+/**
+ * A tool row is considered incomplete (and silently skipped) if it has
+ * no plan selected. This covers:
+ *   - Fully blank rows (user added but filled nothing)
+ *   - Partially filled rows (user selected a tool but deleted before picking a plan)
+ * Only rows with BOTH tool AND plan filled are passed to the audit engine.
+ */
+export function isBlankTool(t: {
+  tool?: string;
+  plan?: string;
+  monthlySpend?: unknown;
+  seats?: unknown;
+}): boolean {
+  const noTool = !t.tool || t.tool.trim() === '';
+  const noPlan = !t.plan || t.plan.trim() === '';
+  // Skip if tool is empty (fully blank) OR plan is empty (partially filled / deleted mid-way)
+  return noTool || noPlan;
+}
