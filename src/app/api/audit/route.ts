@@ -69,23 +69,22 @@ export async function POST(request: NextRequest) {
   // Try to generate an AI summary (with fallback)
   let aiSummary: string;
   try {
-    const anthropicKey = process.env.ANTHROPIC_API_KEY;
-    if (anthropicKey) {
+    const geminiKey = process.env.GEMINI_API_KEY;
+    if (geminiKey) {
       const prompt = buildAuditPrompt(auditResult);
-      const Anthropic = (await import('@anthropic-ai/sdk')).default;
-      const client = new Anthropic({ apiKey: anthropicKey });
-
-      const message = await client.messages.create({
-        model: 'claude-3-5-haiku-20241022',
-        max_tokens: 300,
-        messages: [{ role: 'user', content: prompt }],
-      });
-
-      aiSummary = (message.content[0] as { type: string; text: string }).text ?? generateFallbackSummary(auditResult);
+      const { GoogleGenerativeAI } = await import('@google/generative-ai');
+      const genAI = new GoogleGenerativeAI(geminiKey);
+      
+      // Use gemini-2.5-flash — confirmed available via models API
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      const result = await model.generateContent(prompt);
+      
+      aiSummary = result.response.text() || generateFallbackSummary(auditResult);
     } else {
       aiSummary = generateFallbackSummary(auditResult);
     }
-  } catch {
+  } catch (error) {
+    console.error('[AI Summary Error]', error);
     aiSummary = generateFallbackSummary(auditResult);
   }
 
