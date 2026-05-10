@@ -1,20 +1,20 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { AlertTriangle, TrendingDown, CheckCircle2, ArrowRight, Zap } from 'lucide-react';
+import { AlertTriangle, TrendingDown, CheckCircle2, ArrowRight, Zap, Github, Sparkles, Bot, Key, Network, Code2, Wrench } from 'lucide-react';
 import type { ToolRecommendation } from '@/types/audit';
 import { formatCurrency } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
-const TOOL_ICONS: Record<string, string> = {
-  Cursor: '⚡',
-  'GitHub Copilot': '🐙',
-  Claude: '🔮',
-  ChatGPT: '🤖',
-  'OpenAI API': '🔑',
-  'Anthropic API': '🧬',
-  Gemini: '✨',
-  Windsurf: '🏄',
+const TOOL_ICONS: Record<string, any> = {
+  Cursor: Zap,
+  'GitHub Copilot': Github,
+  Claude: Sparkles,
+  ChatGPT: Bot,
+  'OpenAI API': Key,
+  'Anthropic API': Network,
+  Gemini: Sparkles,
+  Windsurf: Code2,
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -87,6 +87,7 @@ export default function ActionPlan({ recommendations }: ActionPlanProps) {
 function ActionCard({ rec, index }: { rec: ToolRecommendation; index: number }) {
   const isPriority = rec.priority === 'high';
   const isMedium = rec.priority === 'medium';
+  const ToolIcon = TOOL_ICONS[rec.toolName] ?? Wrench;
 
   return (
     <motion.div
@@ -117,9 +118,14 @@ function ActionCard({ rec, index }: { rec: ToolRecommendation; index: number }) 
 
       <div className="flex items-start gap-3 pr-28">
         {/* Tool icon */}
-        <span className="text-2xl mt-0.5 shrink-0">
-          {TOOL_ICONS[rec.toolName] ?? '🔧'}
-        </span>
+        <div className={cn(
+          'p-2.5 rounded-xl border shrink-0',
+          isPriority ? 'bg-rose-500/10 border-rose-500/20' : 
+          isMedium ? 'bg-amber-500/10 border-amber-500/20' : 
+          'bg-brand-500/10 border-brand-500/20'
+        )}>
+          <ToolIcon className={cn('h-5 w-5', isPriority ? 'text-rose-400' : isMedium ? 'text-amber-400' : 'text-brand-400')} />
+        </div>
 
         <div className="flex-1 min-w-0">
           {/* Tool name + action */}

@@ -13,7 +13,7 @@ import AISummaryCard from '@/components/results/AISummaryCard';
 import LeadCaptureModal from '@/components/results/LeadCaptureModal';
 import CredexBanner from '@/components/results/CredexBanner';
 import ActionPlan from '@/components/results/ActionPlan';
-import { ArrowLeft, Share2, Check } from 'lucide-react';
+import { ArrowLeft, Share2, Check, CheckCircle2, PartyPopper } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ResultsPage() {
@@ -81,15 +81,15 @@ export default function ResultsPage() {
         >
           <div className="flex items-center gap-3">
             <Link
-              href="/audit"
+              href="/audit?restore=1"
               className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white transition-colors"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               Edit inputs
             </Link>
             <span className="text-white/20">·</span>
-            <span className="rounded-full bg-emerald-500/20 px-2.5 py-1 text-xs text-emerald-400 font-medium">
-              ✓ Audit Complete
+            <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-2.5 py-1 text-xs text-emerald-400 font-medium">
+              <CheckCircle2 className="h-3 w-3" /> Audit Complete
             </span>
             {highPriorityCount > 0 && (
               <>
@@ -148,7 +148,11 @@ export default function ResultsPage() {
             viewport={{ once: true }}
             className="mt-8 rounded-2xl border border-emerald-500/20 bg-emerald-500/8 p-8 text-center"
           >
-            <p className="text-3xl mb-3">🎉</p>
+            <div className="flex justify-center mb-4">
+              <div className="rounded-full bg-emerald-500/20 p-4">
+                <PartyPopper className="h-8 w-8 text-emerald-400" />
+              </div>
+            </div>
             <h3 className="text-lg font-bold text-emerald-300">Your AI stack is well-optimized!</h3>
             <p className="mt-2 text-sm text-white/50 max-w-md mx-auto">
               No significant savings found right now. Check back as your team grows or new pricing tiers become available.
@@ -179,6 +183,7 @@ export default function ResultsPage() {
         onClose={() => setShowLeadModal(false)}
         auditId={audit.id}
         totalMonthlySavings={audit.totalMonthlySavings}
+        auditResult={audit}
       />
     </main>
   );

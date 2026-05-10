@@ -3,7 +3,6 @@ import type { AIToolConfig } from '@/types';
 export const AI_TOOLS: AIToolConfig[] = [
   {
     name: 'Cursor',
-    icon: '⚡',
     color: '#6366f1',
     plans: [
       { label: 'Hobby (Free)', price: 0 },
@@ -13,7 +12,6 @@ export const AI_TOOLS: AIToolConfig[] = [
   },
   {
     name: 'GitHub Copilot',
-    icon: '🐙',
     color: '#8b5cf6',
     plans: [
       { label: 'Individual ($10/mo)', price: 10 },
@@ -23,7 +21,6 @@ export const AI_TOOLS: AIToolConfig[] = [
   },
   {
     name: 'Claude',
-    icon: '🔮',
     color: '#d97706',
     plans: [
       { label: 'Free', price: 0 },
@@ -34,7 +31,6 @@ export const AI_TOOLS: AIToolConfig[] = [
   },
   {
     name: 'ChatGPT',
-    icon: '🤖',
     color: '#10b981',
     plans: [
       { label: 'Free', price: 0 },
@@ -45,7 +41,6 @@ export const AI_TOOLS: AIToolConfig[] = [
   },
   {
     name: 'OpenAI API',
-    icon: '🔑',
     color: '#06b6d4',
     plans: [
       { label: 'Pay-as-you-go', price: 0 },
@@ -54,7 +49,6 @@ export const AI_TOOLS: AIToolConfig[] = [
   },
   {
     name: 'Anthropic API',
-    icon: '🧬',
     color: '#f59e0b',
     plans: [
       { label: 'Pay-as-you-go', price: 0 },
@@ -63,7 +57,6 @@ export const AI_TOOLS: AIToolConfig[] = [
   },
   {
     name: 'Gemini',
-    icon: '✨',
     color: '#3b82f6',
     plans: [
       { label: 'Free', price: 0 },
@@ -73,7 +66,6 @@ export const AI_TOOLS: AIToolConfig[] = [
   },
   {
     name: 'Windsurf',
-    icon: '🏄',
     color: '#ec4899',
     plans: [
       { label: 'Free', price: 0 },
@@ -86,11 +78,11 @@ export const AI_TOOLS: AIToolConfig[] = [
 export const AI_TOOL_NAMES = AI_TOOLS.map((t) => t.name);
 
 export const USE_CASES = [
-  { value: 'coding', label: '💻 Coding & Development' },
-  { value: 'writing', label: '✍️ Writing & Content' },
-  { value: 'research', label: '🔬 Research & Analysis' },
-  { value: 'data-analysis', label: '📊 Data Analysis' },
-  { value: 'mixed', label: '🎯 Mixed / General' },
+  { value: 'coding', label: 'Coding & Development' },
+  { value: 'writing', label: 'Writing & Content' },
+  { value: 'research', label: 'Research & Analysis' },
+  { value: 'data-analysis', label: 'Data Analysis' },
+  { value: 'mixed', label: 'Mixed / General' },
 ] as const;
 
 export const TRUST_METRICS = [

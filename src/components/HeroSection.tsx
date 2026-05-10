@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowRight, TrendingDown, DollarSign, Sparkles } from 'lucide-react';
+import { ArrowRight, TrendingDown, DollarSign, Sparkles, CheckCircle2 } from 'lucide-react';
 
 const FLOAT_CARDS = [
   {
@@ -143,9 +143,9 @@ export default function HeroSection() {
               className="mt-8 flex items-center gap-6"
             >
               {[
-                { label: 'Free audit', icon: '✓' },
-                { label: 'No signup needed', icon: '✓' },
-                { label: '5 min setup', icon: '✓' },
+                { label: 'Free audit', icon: <CheckCircle2 className="h-3 w-3" /> },
+                { label: 'No signup needed', icon: <CheckCircle2 className="h-3 w-3" /> },
+                { label: '5 min setup', icon: <CheckCircle2 className="h-3 w-3" /> },
               ].map((item) => (
                 <div key={item.label} className="flex items-center gap-1.5 text-xs text-white/40">
                   <span className="text-emerald-400">{item.icon}</span>

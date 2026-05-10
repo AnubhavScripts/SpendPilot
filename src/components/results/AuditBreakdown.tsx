@@ -1,14 +1,14 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { CheckCircle2, TrendingDown, AlertTriangle, Info } from 'lucide-react';
+import { CheckCircle2, TrendingDown, AlertTriangle, Info, Zap, Github, Sparkles, Bot, Key, Network, Code2, Wrench } from 'lucide-react';
 import type { ToolRecommendation } from '@/types/audit';
 import { formatCurrency } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
-const TOOL_ICONS: Record<string, string> = {
-  Cursor: '⚡', 'GitHub Copilot': '🐙', Claude: '🔮', ChatGPT: '🤖',
-  'OpenAI API': '🔑', 'Anthropic API': '🧬', Gemini: '✨', Windsurf: '🏄',
+const TOOL_ICONS: Record<string, any> = {
+  Cursor: Zap, 'GitHub Copilot': Github, Claude: Sparkles, ChatGPT: Bot,
+  'OpenAI API': Key, 'Anthropic API': Network, Gemini: Sparkles, Windsurf: Code2,
 };
 
 const PRIORITY_CONFIG = {
@@ -36,7 +36,7 @@ export default function AuditBreakdown({ recommendations }: AuditBreakdownProps)
         {sorted.map((rec, i) => {
           const priority = PRIORITY_CONFIG[rec.priority];
           const Icon = priority.icon;
-          const emoji = TOOL_ICONS[rec.toolName] ?? '🔧';
+          const ToolIcon = TOOL_ICONS[rec.toolName] ?? Wrench;
 
           return (
             <motion.div
@@ -54,7 +54,9 @@ export default function AuditBreakdown({ recommendations }: AuditBreakdownProps)
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 {/* Left: tool info */}
                 <div className="flex items-start gap-3 flex-1 min-w-0">
-                  <span className="text-2xl">{emoji}</span>
+                  <div className="p-2.5 bg-white/5 rounded-xl border border-white/10 shrink-0">
+                    <ToolIcon className="h-5 w-5 text-brand-400" />
+                  </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
                       <h3 className="text-sm font-semibold text-white">{rec.toolName}</h3>

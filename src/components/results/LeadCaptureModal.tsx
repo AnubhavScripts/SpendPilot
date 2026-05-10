@@ -22,10 +22,11 @@ interface LeadCaptureModalProps {
   onClose: () => void;
   auditId: string;
   totalMonthlySavings: number;
+  auditResult?: unknown; // full audit data for rich email
 }
 
 export default function LeadCaptureModal({
-  isOpen, onClose, auditId, totalMonthlySavings,
+  isOpen, onClose, auditId, totalMonthlySavings, auditResult,
 }: LeadCaptureModalProps) {
   const [state, setState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
@@ -40,7 +41,7 @@ export default function LeadCaptureModal({
       const res = await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, auditId, totalMonthlySavings }),
+        body: JSON.stringify({ ...data, auditId, totalMonthlySavings, auditResult }),
       });
       if (!res.ok) throw new Error('Failed');
       setState('success');
@@ -94,12 +95,19 @@ export default function LeadCaptureModal({
             ) : (
               <>
                 <div className="mb-5">
-                  <div className="mb-1 text-xs font-medium text-brand-300">
-                    ✓ Audit complete — {formatCurrency(totalMonthlySavings)}/mo in savings found
+                  <div className="mb-1 text-xs font-medium text-brand-300 flex items-center gap-1.5 justify-center">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    {totalMonthlySavings < 100 
+                      ? 'Audit complete — Your AI spend is healthy'
+                      : `Audit complete — ${formatCurrency(totalMonthlySavings)}/mo in savings found`}
                   </div>
-                  <h2 className="text-lg font-bold text-white">Get your results via email</h2>
+                  <h2 className="text-lg font-bold text-white">
+                    {totalMonthlySavings < 100 ? 'Get future optimization alerts' : 'Get your results via email'}
+                  </h2>
                   <p className="mt-1 text-sm text-white/50">
-                    We&apos;ll send your full audit report and savings breakdown.
+                    {totalMonthlySavings < 100 
+                      ? 'Drop your email and we&apos;ll notify you when new plan tiers or cheaper alternatives launch.'
+                      : 'We&apos;ll send your full audit report and savings breakdown.'}
                   </p>
                 </div>
 

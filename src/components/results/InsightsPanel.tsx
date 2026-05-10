@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { GitMerge, Zap } from 'lucide-react';
+import { GitMerge, Zap, Code, PenTool, Search } from 'lucide-react';
 import type { ConsolidationInsight } from '@/types/audit';
 import { formatCurrency } from '@/lib/utils';
 
@@ -9,10 +9,10 @@ interface InsightsPanelProps {
   insights: ConsolidationInsight[];
 }
 
-const ICON_MAP = {
-  duplicate_coding: '💻',
-  duplicate_writing: '✍️',
-  duplicate_research: '🔬',
+const ICON_MAP: Record<string, any> = {
+  duplicate_coding: Code,
+  duplicate_writing: PenTool,
+  duplicate_research: Search,
 };
 
 export default function InsightsPanel({ insights }: InsightsPanelProps) {
@@ -28,7 +28,9 @@ export default function InsightsPanel({ insights }: InsightsPanelProps) {
         Consolidation Opportunities
       </h2>
       <div className="space-y-4">
-        {insights.map((insight, i) => (
+        {insights.map((insight, i) => {
+          const InsightIcon = ICON_MAP[insight.type] ?? Zap;
+          return (
           <motion.div
             key={i}
             initial={{ opacity: 0, x: -16 }}
@@ -39,7 +41,9 @@ export default function InsightsPanel({ insights }: InsightsPanelProps) {
           >
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-3 flex-1">
-                <span className="text-2xl">{ICON_MAP[insight.type] ?? '⚡'}</span>
+                <div className="p-2.5 bg-amber-500/10 rounded-xl border border-amber-500/20 shrink-0">
+                  <InsightIcon className="h-5 w-5 text-amber-400" />
+                </div>
                 <div>
                   <p className="text-sm font-semibold text-white mb-1">
                     {insight.tools.join(' + ')} — Overlapping tools
@@ -57,7 +61,8 @@ export default function InsightsPanel({ insights }: InsightsPanelProps) {
               )}
             </div>
           </motion.div>
-        ))}
+          );
+        })}
       </div>
     </motion.section>
   );

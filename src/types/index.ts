@@ -36,7 +36,7 @@ export interface PlanOption {
 
 export interface AIToolConfig {
   name: AIToolName;
-  icon: string;
+  icon?: string;
   color: string;
   plans: PlanOption[];
 }

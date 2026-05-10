@@ -1,13 +1,13 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Zap, TrendingDown, Percent } from 'lucide-react';
+import { Zap, TrendingDown, Percent, Github, Sparkles, Bot, Key, Network, Code2, Wrench } from 'lucide-react';
 import type { AuditRow, AuditToolRow } from '@/types/audit';
 import { formatCurrency } from '@/lib/utils';
 
-const TOOL_ICONS: Record<string, string> = {
-  Cursor: '⚡', 'GitHub Copilot': '🐙', Claude: '🔮', ChatGPT: '🤖',
-  'OpenAI API': '🔑', 'Anthropic API': '🧬', Gemini: '✨', Windsurf: '🏄',
+const TOOL_ICONS: Record<string, any> = {
+  Cursor: Zap, 'GitHub Copilot': Github, Claude: Sparkles, ChatGPT: Bot,
+  'OpenAI API': Key, 'Anthropic API': Network, Gemini: Sparkles, Windsurf: Code2,
 };
 
 interface SharedReportViewProps {
@@ -72,7 +72,9 @@ export default function SharedReportView({ audit, tools }: SharedReportViewProps
       {/* Tool recommendations */}
       <h2 className="text-lg font-bold text-white mb-4">Recommendations</h2>
       <div className="space-y-3">
-        {sortedTools.map((tool, i) => (
+        {sortedTools.map((tool, i) => {
+          const ToolIcon = TOOL_ICONS[tool.tool_name] ?? Wrench;
+          return (
           <motion.div
             key={tool.id}
             initial={{ opacity: 0, x: -16 }}
@@ -82,7 +84,9 @@ export default function SharedReportView({ audit, tools }: SharedReportViewProps
           >
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-3">
-                <span className="text-xl">{TOOL_ICONS[tool.tool_name] ?? '🔧'}</span>
+                <div className="p-2 bg-white/5 rounded-xl border border-white/10 shrink-0">
+                  <ToolIcon className="h-4 w-4 text-brand-400" />
+                </div>
                 <div>
                   <p className="text-sm font-semibold text-white">{tool.tool_name}</p>
                   <p className="text-xs text-white/40">{tool.current_plan} → <span className="text-brand-300">{tool.recommended_plan}</span></p>
@@ -98,7 +102,8 @@ export default function SharedReportView({ audit, tools }: SharedReportViewProps
               <p className="mt-2 text-xs text-white/40 leading-relaxed pl-9">{tool.reason}</p>
             )}
           </motion.div>
-        ))}
+          );
+        })}
       </div>
 
       {/* CTA */}
