@@ -1,37 +1,115 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SpendPilot — AI Spend Audit for Startups
 
-## Getting Started
+> Stop burning cash on AI tools you don't need.
 
-First, run the development server:
+SpendPilot audits your startup's AI subscription stack, surfaces duplicate subscriptions, wrong pricing plans, and unused enterprise seats — in under 5 minutes.
+
+---
+
+## 🚀 Product Overview
+
+| Feature | Status |
+|---|---|
+| Landing Page | ✅ |
+| Spend Input Form | ✅ |
+| Audit Engine (deterministic) | ✅ |
+| AI Summary (Claude API) | ✅ |
+| Results Dashboard | ✅ |
+| Data Visualizations (Recharts) | ✅ |
+| Lead Capture + Email (Resend) | ✅ |
+| Supabase Persistence | ✅ |
+| Shareable Public Reports | ✅ |
+| Rate Limiting + Honeypot | ✅ |
+| CI/CD (GitHub Actions) | ✅ |
+| 9 Vitest Tests | ✅ |
+
+---
+
+## 📸 Screenshots
+
+> _Add screenshots after first run_
+
+- [ ] Landing page hero
+- [ ] Spend input form
+- [ ] Results dashboard
+- [ ] Public shared report
+
+---
+
+## 🛠 Tech Stack
+
+- **Framework**: Next.js 14 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS + custom glassmorphism system
+- **Animations**: Framer Motion
+- **Charts**: Recharts
+- **Forms**: React Hook Form + Zod
+- **AI**: Anthropic Claude (claude-3-5-haiku) with fallback summaries
+- **Database**: Supabase (PostgreSQL)
+- **Email**: Resend
+- **Testing**: Vitest
+- **CI/CD**: GitHub Actions
+
+---
+
+## ⚙️ Setup Instructions
+
+### 1. Clone and install
+
+```bash
+git clone <repo-url>
+cd SpendPilot
+npm install
+```
+
+### 2. Configure environment
+
+```bash
+cp .env.example .env.local
+# Fill in your Supabase, Anthropic, and Resend credentials
+```
+
+### 3. Set up Supabase
+
+Run the following SQL in your Supabase project:
+
+```sql
+-- See schema in ARCHITECTURE.md
+```
+
+### 4. Run locally
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Open http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 5. Run tests
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm test
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## 🚀 Deployment
 
-To learn more about Next.js, take a look at the following resources:
+Optimized for Vercel:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+vercel --prod
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Set all environment variables in the Vercel dashboard before deploying.
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📁 Architecture
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# SpendPilot
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for full system design.
+
+---
+
+## 📊 Key Metrics
+
+See [METRICS.md](./METRICS.md) for funnel and North Star metrics.
