@@ -1,58 +1,27 @@
-# METRICS.md — SpendPilot KPIs and Instrumentation
+# Product Metrics & Instrumentation
 
-## North Star Metric
+## 🌟 North Star Metric
+**Identified Monthly Savings (IMS)**
+*Why:* SpendPilot is a B2B lead-generation tool. The core value proposition to the user (saving money) is perfectly aligned with the value to the business (higher IMS = higher quality leads for procurement/negotiation services). Tracking raw "Daily Active Users" is useless for a tool used once a quarter; tracking the exact dollar amount of savings we expose is the ultimate measure of product-market fit.
 
-**Total verified savings unlocked by users**  
-(sum of totalMonthlySavings across all completed audits × 12)
+## 📊 Core Input Metrics (The Funnel)
+To drive our North Star, we track three specific input metrics:
 
-This metric grows when:
-- More users complete audits (acquisition)
-- Users with higher AI spend use SpendPilot (targeting)
-- Audit engine accuracy improves (product quality)
+1. **Audit Completion Rate:** 
+   *(Audits Generated / Landing Page Visitors)*
+   Measures the friction of the dynamic form. If this drops below 15%, the form is too complex or asking for too much data upfront.
+2. **Lead Conversion Rate:** 
+   *(Emails Captured / Audits Generated)*
+   Measures the effectiveness of the "Locking" mechanism on the Action Plan. If users see their High-Level Savings but refuse to give their email to see the tool-by-tool breakdown, the perceived value is too low.
+3. **Average Savings Per Audit (ASPA):**
+   Measures whether we are attracting our target persona (Startups/Mid-market) or just individual hobbyists. If ASPA is <$50/mo, our top-of-funnel marketing is targeting the wrong demographic.
 
----
+## 🛠️ Instrumentation Plan (What we track first)
+1. `audit_started` (Event): Triggers when a user clicks "Add Tool".
+2. `audit_generated` (Event): Captures the `totalSpend` and `totalSavings` as event properties.
+3. `lead_captured` (Event): Triggers when the Resend email fires successfully.
+4. `report_shared` (Event): Triggers when a user copies the `shareSlug` to send to their team.
 
-## Funnel Metrics
-
-| Stage | Metric | Target |
-|---|---|---|
-| Awareness | Landing page visits | – |
-| Interest | Clicks to /audit | > 15% CTR from LP |
-| Activation | Audit form submitted | > 60% of /audit visitors |
-| Value | Results page viewed | > 90% of submitters |
-| Lead | Email captured | > 30% of results viewers |
-| Retention | Return visits | > 20% within 30 days |
-
----
-
-## Key Events to Track
-
-```typescript
-// Suggested analytics events (PostHog / Mixpanel)
-
-track('audit_started')          // /audit page load
-track('tool_added', { tool })   // each tool added to form
-track('audit_submitted', {
-  tool_count,
-  total_monthly_spend,
-})
-track('audit_completed', {
-  total_monthly_savings,
-  savings_percentage,
-  use_case,
-})
-track('lead_captured', {
-  has_company,
-  total_monthly_savings,
-})
-track('report_shared')          // share link copied
-track('credex_cta_clicked')     // high-savings CTA
-```
-
----
-
-## Instrumentation Plan
-
-**Phase 1 (now)**: Add PostHog or Plausible for page-level analytics  
-**Phase 2**: Add custom event tracking at key funnel points  
-**Phase 3**: Dashboard showing real-time audit volume and savings unlocked
+## 🔄 Pivot Trigger
+If **Lead Conversion Rate is < 5%** after 1,000 generated audits, it means users do not value the itemized action plan enough to trade their email. 
+*Pivot Decision:* We would remove the email wall entirely, make the tool 100% open, and pivot to a "Book a Consultation" CTA at the very bottom of the fully exposed report.

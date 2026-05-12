@@ -1,143 +1,54 @@
-# ARCHITECTURE.md — SpendPilot System Design
+# System Architecture
 
-## Architecture Diagram
+## Core Data Flow Diagram
 
 ```mermaid
-flowchart TD
-    User["👤 User (Browser)"]
+sequenceDiagram
+    participant User
+    participant Browser
+    participant SessionStorage
+    participant NextJS_API
+    participant Supabase
+    participant Gemini
+    participant Resend
 
-    subgraph Frontend["Next.js 14 (App Router)"]
-        LP["/ Landing Page"]
-        Form["/ audit Spend Form"]
-        Results["/ results Results Dashboard"]
-        Share["/ audit/[slug] Public Report"]
+    User->>Browser: Enters team size, use case, & AI tools
+    Browser->>Browser: Filters blank rows & runs Zod validation
+    Browser->>Browser: Executes Deterministic Audit Engine
+    Browser->>Browser: Generates Fallback Summary
+    Browser->>SessionStorage: Stores `auditResult` & raw `spendpilot_form`
+    
+    par Async Server Processing
+        Browser->>NextJS_API: POST /api/audit (fire & forget)
+        NextJS_API->>Gemini: Request personalized AI Summary
+        Gemini-->>NextJS_API: Returns generated summary text
+        NextJS_API->>Supabase: Insert anonymous audit record
+        NextJS_API-->>Browser: Returns `shareSlug` & AI summary
     end
 
-    subgraph API["Route Handlers"]
-        AuditAPI["POST /api/audit"]
-        LeadsAPI["POST /api/leads"]
-    end
-
-    subgraph Engine["Audit Engine (src/lib)"]
-        AuditEngine["auditEngine.ts\n(deterministic rules)"]
-        Pricing["pricing.ts\n(pricing constants)"]
-        AISummary["aiSummary.ts\n(prompt builder)"]
-    end
-
-    subgraph External["External Services"]
-        Claude["Anthropic Claude\n(AI summaries)"]
-        Supabase["Supabase\n(PostgreSQL)"]
-        Resend["Resend\n(email)"]
-    end
-
-    User --> LP
-    LP --> Form
-    Form -->|"POST JSON"| AuditAPI
-    AuditAPI --> AuditEngine
-    AuditEngine --> Pricing
-    AuditAPI --> AISummary
-    AISummary -->|"API call"| Claude
-    AuditAPI -->|"saveAudit()"| Supabase
-    AuditAPI -->|"{ audit, shareSlug }"| Results
-    Results -->|"POST"| LeadsAPI
-    LeadsAPI -->|"saveLead()"| Supabase
-    LeadsAPI -->|"send email"| Resend
-    Share -->|"getAuditBySlug()"| Supabase
+    User->>Browser: Views Results (Audit Breakdown, Savings)
+    User->>Browser: Enters email to unlock Action Plan
+    Browser->>NextJS_API: POST /api/leads (email, savings, audit details)
+    NextJS_API->>Supabase: Insert lead & associate with auditId
+    NextJS_API->>Resend: Trigger HTML email with savings breakdown
+    Resend-->>User: Delivers customized report to inbox
 ```
 
----
+## Data Flow Narrative
+1. **Intake:** The user builds a dynamic list of AI tools. Form validation guarantees only complete rows (tool + plan selected) pass.
+2. **Local Processing:** The deterministic audit engine calculates exact financial metrics entirely in the browser to guarantee zero-latency results.
+3. **Enhancement:** A background fetch requests an enhanced narrative summary from the Gemini API and saves the session to Supabase.
+4. **Fulfillment:** Lead capture data is sent to a secure Next.js API route using a Service Role Key (bypassing RLS for secure insertion) and triggers a beautifully formatted transactional email via Resend.
 
-## Data Flow
+## Technology Stack Reasoning
+- **Next.js 14 (App Router):** Chosen for its ability to seamlessly combine a highly interactive React client with secure serverless API routes in a single deployment.
+- **Supabase:** Provides an instant Postgres database with robust Row Level Security (RLS), allowing us to store anonymous audits safely while using a Service Key for sensitive lead captures.
+- **React Hook Form + Zod:** Chosen for strict type safety and performance. RHF prevents unnecessary re-renders during complex array manipulations.
+- **Framer Motion:** Adds essential micro-interactions and "wow-factor" glassmorphism animations necessary to build trust in a B2B SaaS tool.
+- **Resend:** Selected over SendGrid/Mailgun for its modern developer experience, speed, and native React Email support.
 
-1. User fills Spend Form → client POSTs to `/api/audit`
-2. Route Handler validates input with Zod
-3. `runAudit()` evaluates 6 deterministic rules per tool
-4. Claude API generates a ~100-word personalized summary (fallback if unavailable)
-5. Result saved to Supabase (`audits` + `audit_tools` tables)
-6. Response returned to client; stored in `sessionStorage`
-7. User redirected to `/results` — reads from `sessionStorage`
-8. After 3s, lead capture modal appears → POST `/api/leads`
-9. Lead saved to Supabase with duplicate prevention
-10. Confirmation email sent via Resend
-
----
-
-## Database Schema
-
-```sql
--- Run in Supabase SQL editor
-
-create table audits (
-  id uuid primary key,
-  created_at timestamptz default now(),
-  team_size int not null,
-  use_case text not null,
-  total_monthly_spend numeric not null,
-  total_optimized_spend numeric not null,
-  total_monthly_savings numeric not null,
-  total_annual_savings numeric not null,
-  savings_percentage int not null,
-  ai_summary text,
-  share_slug text unique not null
-);
-
-create table audit_tools (
-  id uuid primary key default gen_random_uuid(),
-  audit_id uuid references audits(id) on delete cascade,
-  tool_name text not null,
-  current_plan text not null,
-  current_monthly_spend numeric not null,
-  current_seats int not null,
-  recommended_plan text not null,
-  recommended_monthly_cost numeric not null,
-  monthly_savings numeric not null,
-  annual_savings numeric not null,
-  action text not null,
-  reason text not null,
-  recommendation_type text not null,
-  priority text not null
-);
-
-create table leads (
-  id uuid primary key default gen_random_uuid(),
-  created_at timestamptz default now(),
-  email text not null,
-  company_name text,
-  role text,
-  team_size int,
-  audit_id uuid references audits(id),
-  total_monthly_savings numeric not null
-);
-
--- Row Level Security
-alter table audits enable row level security;
-alter table audit_tools enable row level security;
-alter table leads enable row level security;
-
--- Public read for audits (for shared reports)
-create policy "Public audits read" on audits for select using (true);
-
--- Service role full access for everything
-```
-
----
-
-## Scaling Considerations
-
-| Concern | Current approach | At scale |
-|---|---|---|
-| Rate limiting | In-memory (per-process) | Redis + Upstash |
-| AI summaries | Synchronous in request | Background job queue |
-| Session storage | `sessionStorage` | Supabase or Redis |
-| Audit persistence | Per-request | Async with retry |
-
----
-
-## Stack Decisions
-
-- **Next.js 14 App Router**: Collocated API routes, RSC for shared reports, Vercel-native
-- **Tailwind CSS v3**: Well-tested, no v4 breaking changes risk
-- **Supabase**: Postgres + auth + RLS in one; free tier generous for MVP
-- **Anthropic Claude**: Best writing quality for financial summaries; haiku model is fast and cheap
-- **Resend**: Developer-first, excellent deliverability, simple API
-- **Vitest**: Fast ESM-native test runner; shares Vite's config ecosystem
+## Scaling Considerations (10k Audits/Day)
+If SpendPilot scaled to 10,000 audits per day, the current architecture would face three bottlenecks:
+1. **Database Connections:** We would need to implement PgBouncer or Supabase's built-in connection pooling to prevent Next.js serverless cold starts from exhausting the Postgres connection limit.
+2. **Rate Limiting:** The current in-memory rate limiter (`rateMap` in API routes) resets on every serverless function instance. We would migrate to an Upstash/Redis-based rate limiter to enforce strict global IP-based rate limiting to prevent API abuse.
+3. **Queueing Emails:** At 10k/day, calling the Resend API synchronously during the `/api/leads` request could cause timeouts. We would move email dispatch to a background queue (like Inngest or Trigger.dev) to ensure the client-side API response remains under 200ms.

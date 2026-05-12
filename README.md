@@ -1,115 +1,57 @@
-# SpendPilot — AI Spend Audit for Startups
+# SpendPilot: AI SaaS Spend Auditor
 
-> Stop burning cash on AI tools you don't need.
+SpendPilot is a B2B SaaS tool designed to help engineering leaders and founders audit their team's AI tool subscriptions and uncover immediate cost-saving opportunities. By analyzing your active seats across tools like GitHub Copilot, Cursor, and ChatGPT Enterprise, SpendPilot provides a deterministic, personalized action plan to consolidate redundant licenses and optimize your AI stack.
 
-SpendPilot audits your startup's AI subscription stack, surfaces duplicate subscriptions, wrong pricing plans, and unused enterprise seats — in under 5 minutes.
+### 📸 Product Tour
+*(Screenshots/recording to be embedded here)*
+- [Watch the 30-second Demo Video (Loom)](#)
+- ![Hero Section](/docs/screenshots/hero.png)
+- ![Audit Form](/docs/screenshots/form.png)
+- ![Savings Action Plan](/docs/screenshots/action-plan.png)
 
----
+## 🚀 Quick Start
 
-## 🚀 Product Overview
+**Prerequisites:** Node.js 18+ and a Supabase account.
 
-| Feature | Status |
-|---|---|
-| Landing Page | ✅ |
-| Spend Input Form | ✅ |
-| Audit Engine (deterministic) | ✅ |
-| AI Summary (Claude API) | ✅ |
-| Results Dashboard | ✅ |
-| Data Visualizations (Recharts) | ✅ |
-| Lead Capture + Email (Resend) | ✅ |
-| Supabase Persistence | ✅ |
-| Shareable Public Reports | ✅ |
-| Rate Limiting + Honeypot | ✅ |
-| CI/CD (GitHub Actions) | ✅ |
-| 9 Vitest Tests | ✅ |
+1. **Clone & Install**
+   ```bash
+   git clone https://github.com/yourusername/spendpilot.git
+   cd spendpilot
+   npm install
+   ```
+2. **Environment Setup**
+   Copy `.env.example` to `.env.local` and add your keys (Supabase, Resend, Gemini).
+   ```bash
+   cp .env.example .env.local
+   ```
+3. **Run Locally**
+   ```bash
+   npm run dev
+   ```
+   Open `http://localhost:3000` to run the app.
 
----
+4. **Deploy**
+   The application is fully optimized for Vercel. 
+   - Connect your GitHub repo to Vercel.
+   - Add the environment variables from `.env.local`.
+   - Click "Deploy".
 
-## 📸 Screenshots
+**Live URL:** [https://spendpilot.vercel.app](https://spendpilot.vercel.app) *(Replace with actual URL)*
 
-> _Add screenshots after first run_
+## ⚖️ Architectural Decisions & Trade-offs
 
-- [ ] Landing page hero
-- [ ] Spend input form
-- [ ] Results dashboard
-- [ ] Public shared report
-
----
-
-## 🛠 Tech Stack
-
-- **Framework**: Next.js 14 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS + custom glassmorphism system
-- **Animations**: Framer Motion
-- **Charts**: Recharts
-- **Forms**: React Hook Form + Zod
-- **AI**: Anthropic Claude (claude-3-5-haiku) with fallback summaries
-- **Database**: Supabase (PostgreSQL)
-- **Email**: Resend
-- **Testing**: Vitest
-- **CI/CD**: GitHub Actions
-
----
-
-## ⚙️ Setup Instructions
-
-### 1. Clone and install
-
-```bash
-git clone <repo-url>
-cd SpendPilot
-npm install
-```
-
-### 2. Configure environment
-
-```bash
-cp .env.example .env.local
-# Fill in your Supabase, Anthropic, and Resend credentials
-```
-
-### 3. Set up Supabase
-
-Run the following SQL in your Supabase project:
-
-```sql
--- See schema in ARCHITECTURE.md
-```
-
-### 4. Run locally
-
-```bash
-npm run dev
-# Open http://localhost:3000
-```
-
-### 5. Run tests
-
-```bash
-npm test
-```
-
----
-
-## 🚀 Deployment
-
-Optimized for Vercel:
-
-```bash
-vercel --prod
-```
-
-Set all environment variables in the Vercel dashboard before deploying.
-
----
-
-## 📁 Architecture
-
-See [ARCHITECTURE.md](./ARCHITECTURE.md) for full system design.
-
----
-
-## 📊 Key Metrics
-
-See [METRICS.md](./METRICS.md) for funnel and North Star metrics.
+1. **Client-Side Audit Engine over Server-Side Processing**
+   *Why:* The core pricing logic (`src/lib/auditEngine.ts`) runs entirely in the browser. 
+   *Trade-off:* We expose our pricing matrix logic to the client, but we gain zero-latency feedback, 100% uptime (even if backend APIs fail), and eliminate server compute costs for tire-kickers.
+2. **Fallback AI Summaries over Strict AI Dependency**
+   *Why:* Gemini API quotas can fail (e.g., `limit: 0` on free tiers).
+   *Trade-off:* We wrote a deterministic template generator that acts as a fallback. It's less personalized than the LLM output, but guarantees the app never crashes during an API outage.
+3. **Soft Foreign Keys in the Database**
+   *Why:* We dropped the strict `audit_id` foreign key constraint on the `leads` table.
+   *Trade-off:* We lose strict relational database integrity, but we prevent a race condition where a user submits their email before the asynchronous audit payload finishes saving. UX > strict DB rules here.
+4. **Zod Validation in `onSubmit` instead of `.transform()`**
+   *Why:* Attempting to filter blank tool rows inside the schema caused "ghost card" state bugs with `react-hook-form`.
+   *Trade-off:* The validation schema is slightly less strict (e.g., `id` is optional), but the form state remains completely stable and predictable during complex UI animations.
+5. **Framer Motion Instant Exits**
+   *Why:* `duration: 0` on exit animations.
+   *Trade-off:* We sacrifice a smooth fade-out animation when deleting a tool card, but we completely eliminate race conditions where React Hook Form re-registers a deleted, fading component.

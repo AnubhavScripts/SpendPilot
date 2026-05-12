@@ -109,3 +109,23 @@ The initial email only contained the total savings number. Updated the email tem
 - [x] **Gemini 2.0 Flash has `limit: 0` free tier quota** for some Google Cloud projects due to regional restrictions. Diagnosed via `curl` to the `/v1beta/models` endpoint, which confirmed `gemini-2.5-flash` was available. Switched model to `gemini-2.5-flash` — confirmed working.
 - [ ] Resend sandbox mode limits emails to the account owner's address only. Needs a verified custom domain for production use.
 - [ ] The rate limiter (`rateMap`) is in-memory and resets on each serverless cold start. For production, this should be replaced with an upstash/redis-based rate limiter.
+
+---
+
+## Day 6 — May 11: Form Architecture Refactor, State Management & UI Polish
+
+**Goal:** Resolve complex form state regressions (the "ghost card" bug), polish the UI to enterprise standards, and implement seamless back-navigation state.
+
+**Built today:**
+- **UI Professionalization:** Executed a massive "emoji purge" across the codebase. Replaced all static emojis in `USE_CASES`, `AI_TOOLS`, and results components with professional, consistent `lucide-react` SVG icons. 
+- **The "Ghost Card" Bug Fix:** Discovered that the Day 4 Zod `.transform()` pipe was interacting poorly with `react-hook-form` default values and Framer Motion's exit animations. When a user deleted a card, the exit animation kept the component mounted just long enough for React Hook Form to *re-register* the deleted fields into state (but without their unique IDs). When the user clicked Generate, these "ghost rows" caused the Zod schema to crash silently because `id` was undefined.
+- **The Three-Layer Architecture Fix:**
+  1. *Zero-Duration Exits*: Changed Framer Motion `exit` transitions to `duration: 0` so deleted cards unmount instantaneously.
+  2. *Schema Relaxation*: Made `id` optional in the Zod schema so ghost rows don't block validation.
+  3. *Pre-validation Filtering*: Shifted the blank-row filtering out of Zod entirely. Now, `SpendForm.tsx` manually strips any row missing a `plan` *before* Zod validation runs.
+- **Circular JSON Fix:** Discovered that spreading the raw `react-hook-form` data object (`{ ...data }`) into the `fetch` body caused a `TypeError: Converting circular structure to JSON` because it contained internal React Fiber DOM node references. Fixed by explicitly constructing a clean `cleanPayload` map.
+- **State Management ("Edit Inputs"):** Implemented `sessionStorage` management. When a user clicks "Generate", their exact form inputs are saved. Clicking "Edit Inputs" routes to `/audit?restore=1`, which loads the state and *immediately deletes* it from session storage. This ensures a seamless back-navigation while keeping manual page refreshes a clean slate.
+
+---
+
+## Key Architectural Decisions Summary
