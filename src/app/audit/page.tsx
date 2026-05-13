@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import Navbar from '@/components/Navbar';
 import SpendForm from '@/components/SpendForm';
@@ -28,7 +29,9 @@ export default function AuditPage() {
             duplicates, and wrong-plan choices.
           </p>
         </div>
-        <SpendForm />
+        <Suspense fallback={<div className="py-20 text-center text-sm text-white/50">Loading audit form...</div>}>
+          <SpendForm />
+        </Suspense>
       </div>
     </main>
   );
